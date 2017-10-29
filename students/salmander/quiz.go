@@ -25,6 +25,8 @@ func main() {
 
 	file := openFile(fileNameFlag)
 
+	fmt.Printf("You have %d seconds to answer all the questions.\n", *timeout)
+
 	// Parse the csv file
 	reader := csv.NewReader(file)
 	lines, err := reader.ReadAll()

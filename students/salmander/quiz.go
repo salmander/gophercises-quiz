@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 type Problem struct {
@@ -16,17 +17,13 @@ type Problem struct {
 func main() {
 	// Read the following flags from command line:
 	// A. CSV file containing the problems
-	fileNameFlag := flag.String("filename", "problems.csv", "-filename problems.csv")
+	fileNameFlag := flag.String("filename", "problems.csv", "CSV file in 'question,answer' format")
 
+	// B. Flag for max time in seconds
+	timeout := flag.Int("limit", 10, "time in seconds")
 	flag.Parse()
-	fmt.Println("Opening file:", *fileNameFlag)
 
-	// Open the file for reading
-	file, err := os.Open(*fileNameFlag)
-	if err != nil {
-		fmt.Printf("error opening %s\n", *fileNameFlag)
-		log.Fatal(err)
-	}
+	file := openFile(fileNameFlag)
 
 	// Parse the csv file
 	reader := csv.NewReader(file)
@@ -43,16 +40,40 @@ func main() {
 		problems[i].answer = line[1]
 	}
 
-	var answer string
+	timer := time.NewTimer(time.Duration(*timeout) * time.Second)
+
 	var score int
+	answerChan := make(chan string)
+label:
 	for i, problem := range problems {
-		fmt.Printf("Question #%d: %s =\n", i+1, problem.question)
-		fmt.Scanf("%s\n", &answer)
-		if answer == problem.answer {
-			fmt.Println("correct!")
-			score++
+		go func() {
+			fmt.Printf("Question #%d: %s = ", i+1, problem.question)
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerChan <- answer
+		}()
+
+		select {
+		case <-timer.C:
+			fmt.Println()
+			break label
+		case answer := <-answerChan:
+			if answer == problem.answer {
+				fmt.Println("correct!")
+				score++
+			}
 		}
 	}
 
 	fmt.Printf("You answered %d out of %d correctly.", score, len(problems))
+}
+func openFile(fileNameFlag *string) *os.File {
+	fmt.Println("Opening file:", *fileNameFlag)
+	// Open the file for reading
+	file, err := os.Open(*fileNameFlag)
+	if err != nil {
+		fmt.Printf("error opening %s\n", *fileNameFlag)
+		log.Fatal(err)
+	}
+	return file
 }

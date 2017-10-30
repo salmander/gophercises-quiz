@@ -21,6 +21,9 @@ func main() {
 
 	// B. Flag for max time in seconds
 	timeout := flag.Int("limit", 10, "time in seconds")
+
+	// C. Flag for shuffling the questions
+	shuffle := flag.Bool("shuffle", false, "Shuffle the order of the questions")
 	flag.Parse()
 
 	file := openFile(fileNameFlag)
@@ -41,6 +44,8 @@ func main() {
 		problems[i].question = line[0]
 		problems[i].answer = line[1]
 	}
+
+	
 
 	timer := time.NewTimer(time.Duration(*timeout) * time.Second)
 
